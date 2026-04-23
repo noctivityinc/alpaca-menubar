@@ -3,7 +3,38 @@ import AppKit
 
 struct MenuBarView: View {
     @EnvironmentObject var account: AccountViewModel
+
     var body: some View {
+        if !account.isConfigured {
+            // Not yet set up — show prominent setup prompt
+            VStack(spacing: 12) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 32))
+                    .foregroundColor(.accentColor)
+                Text("AlpacaBar")
+                    .font(.headline)
+                Text("Connect your Alpaca account to get started.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                SettingsLink {
+                    Text("Enter API Key")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .buttonStyle(.plain)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(20)
+            .frame(width: 260)
+        } else {
+        mainView
+        }
+    }
+
+    var mainView: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header — equity + day change
             VStack(alignment: .leading, spacing: 2) {
@@ -65,12 +96,11 @@ struct MenuBarView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
-                Button("Settings") {
-                    NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                    NSApplication.shared.activate(ignoringOtherApps: true)
+                SettingsLink {
+                    Text("Settings")
+                        .font(.system(size: 12))
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 12))
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.plain)
@@ -81,7 +111,7 @@ struct MenuBarView: View {
             .padding(.vertical, 8)
         }
         .frame(width: 300)
-    }
+    } // end mainView
 
     @ViewBuilder
     private func statView(label: String, value: String) -> some View {

@@ -3,6 +3,10 @@ import Combine
 import AppKit
 import ServiceManagement
 
+extension Notification.Name {
+    static let openSettings = Notification.Name("openSettings")
+}
+
 struct AlpacaAccount: Decodable {
     let equity: String
     let last_equity: String
@@ -57,13 +61,7 @@ class AccountViewModel: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.refresh()
         }
-        // Auto-open settings on first launch if no key configured
-        if !isConfigured {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApplication.shared.activate(ignoringOtherApps: true)
-            }
-        }
+        // Settings will be accessible via the menu bar dropdown
     }
 
     func refresh() {
