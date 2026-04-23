@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct MenuBarView: View {
     @EnvironmentObject var account: AccountViewModel
@@ -64,11 +65,12 @@ struct MenuBarView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
-                SettingsLink {
-                    Text("Settings")
-                        .font(.system(size: 12))
+                Button("Settings") {
+                    NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    NSApplication.shared.activate(ignoringOtherApps: true)
                 }
                 .buttonStyle(.plain)
+                .font(.system(size: 12))
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.plain)

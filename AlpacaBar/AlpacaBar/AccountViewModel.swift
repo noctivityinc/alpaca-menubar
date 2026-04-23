@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AppKit
 import ServiceManagement
 
 struct AlpacaAccount: Decodable {
@@ -59,8 +60,8 @@ class AccountViewModel: ObservableObject {
         // Auto-open settings on first launch if no key configured
         if !isConfigured {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
+                NSApplication.shared.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                NSApplication.shared.activate(ignoringOtherApps: true)
             }
         }
     }
