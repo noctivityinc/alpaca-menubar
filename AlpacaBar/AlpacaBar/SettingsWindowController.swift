@@ -7,13 +7,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate {
     static func open(account: AccountViewModel) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             if let existing = shared {
-                existing.window?.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
+                bringToFront(existing.window!)
                 return
             }
-
-            // Switch to regular app so window stays in front
-            NSApp.setActivationPolicy(.regular)
 
             let view = SettingsView(account: account)
             let hosting = NSHostingController(rootView: view)
@@ -32,14 +28,25 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate {
             let controller = SettingsWindowController(window: window)
             window.delegate = controller
             shared = controller
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+
+            bringToFront(window)
         }
+    }
+
+    private static func bringToFront(_ window: NSWindow) {
+        // The correct pattern for LSUIElement/accessory apps:
+        // unhide first, then switch policy, then make key
+        NSApp.unhide(nil)
+        NSApp.setActivationPolicy(.regular)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     func windowWillClose(_ notification: Notification) {
         SettingsWindowController.shared = nil
-        // Switch back to accessory (menu bar only, no Dock icon)
-        NSApp.setActivationPolicy(.accessory)
+        // Switch back to accessory so Dock icon disappears
+        DispatchQueue.main.async {
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 }
