@@ -2,8 +2,6 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var account: AccountViewModel
-    @Environment(\.openSettings) private var openSettings
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header — equity + day change
@@ -66,7 +64,7 @@ struct MenuBarView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
-                Button("Settings") { openSettings() }
+                Button("Settings") { NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) }
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
