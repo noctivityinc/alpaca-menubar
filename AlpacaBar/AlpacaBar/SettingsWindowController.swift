@@ -5,14 +5,18 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate {
     static var shared: SettingsWindowController?
 
     static func open(account: AccountViewModel) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // Capture outside the async block to avoid layout recursion
+        // from within the MenuBarExtra popup
+        let view = SettingsView(account: account)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             if let existing = shared {
                 bringToFront(existing.window!)
                 return
             }
 
-            let view = SettingsView(account: account)
             let hosting = NSHostingController(rootView: view)
+            hosting.view.translatesAutoresizingMaskIntoConstraints = false
 
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 420, height: 460),
@@ -34,8 +38,6 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private static func bringToFront(_ window: NSWindow) {
-        // The correct pattern for LSUIElement/accessory apps:
-        // unhide first, then switch policy, then make key
         NSApp.unhide(nil)
         NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
@@ -44,7 +46,6 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         SettingsWindowController.shared = nil
-        // Switch back to accessory so Dock icon disappears
         DispatchQueue.main.async {
             NSApp.setActivationPolicy(.accessory)
         }

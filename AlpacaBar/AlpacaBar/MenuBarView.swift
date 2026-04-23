@@ -18,7 +18,10 @@ struct MenuBarView: View {
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 Button("Enter API Key") {
-                    SettingsWindowController.open(account: account)
+                    let acct = account
+                    DispatchQueue.main.async {
+                        SettingsWindowController.open(account: acct)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
@@ -97,7 +100,10 @@ struct MenuBarView: View {
                     .font(.system(size: 12))
                 Spacer()
                 Button("Settings") {
-                    SettingsWindowController.open(account: account)
+                    let acct = account
+                    DispatchQueue.main.async {
+                        SettingsWindowController.open(account: acct)
+                    }
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 12))
