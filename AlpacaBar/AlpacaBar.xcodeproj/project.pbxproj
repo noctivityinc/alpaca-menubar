@@ -13,6 +13,7 @@
 		B004 /* MenuBarLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A004 /* MenuBarLabel.swift */; };
 		B005 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A005 /* MenuBarView.swift */; };
 		B006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A006 /* SettingsView.swift */; };
+		B007 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007 /* SettingsWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		A004 /* MenuBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarLabel.swift; sourceTree = "<group>"; };
 		A005 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		A006 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A007 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		PROD /* AlpacaBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlpacaBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -43,6 +45,7 @@
 				A004,
 				A005,
 				A006,
+				A007,
 			);
 			path = AlpacaBar;
 			sourceTree = "<group>";
@@ -119,6 +122,7 @@
 				B004,
 				B005,
 				B006,
+				B007,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

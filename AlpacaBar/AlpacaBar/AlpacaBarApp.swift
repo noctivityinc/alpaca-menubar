@@ -14,10 +14,5 @@ struct AlpacaBarApp: App {
                 .environmentObject(account)
         }
         .menuBarExtraStyle(.window)
-
-        Settings {
-            SettingsView()
-                .environmentObject(account)
-        }
     }
 }

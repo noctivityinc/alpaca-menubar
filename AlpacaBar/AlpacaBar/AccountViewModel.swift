@@ -61,7 +61,12 @@ class AccountViewModel: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.refresh()
         }
-        // Settings will be accessible via the menu bar dropdown
+        // Auto-open settings on first launch if no key configured
+        if !isConfigured {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                SettingsWindowController.open(account: self)
+            }
+        }
     }
 
     func refresh() {

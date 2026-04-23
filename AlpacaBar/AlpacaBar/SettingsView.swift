@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import AppKit
 
 enum AuthState: Equatable {
     case idle
@@ -9,13 +10,12 @@ enum AuthState: Equatable {
 }
 
 struct SettingsView: View {
-    @EnvironmentObject var account: AccountViewModel
+    @ObservedObject var account: AccountViewModel
     @State private var keyId: String = ""
     @State private var secret: String = ""
     @State private var isPaper: Bool = true
     @State private var launchAtLogin: Bool = false
     @State private var authState: AuthState = .idle
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -31,58 +31,56 @@ struct SettingsView: View {
 
             Divider()
 
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Key")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Credentials
+                    GroupBox(label: Text("Alpaca API Credentials").font(.caption).foregroundColor(.secondary)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("API Key ID").font(.caption).foregroundColor(.secondary)
+                                TextField("PK...", text: $keyId)
+                                    .textFieldStyle(.roundedBorder)
+                                    .autocorrectionDisabled()
+                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("API Secret").font(.caption).foregroundColor(.secondary)
+                                SecureField("Secret key", text: $secret)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            Button("Find my API keys →") {
+                                NSWorkspace.shared.open(URL(string: "https://app.alpaca.markets/paper/dashboard/overview")!)
+                            }
+                            .buttonStyle(.plain)
                             .font(.caption)
-                            .foregroundColor(.secondary)
-                        TextField("PK5XFH...", text: $keyId)
-                            .textFieldStyle(.roundedBorder)
-                            .autocorrectionDisabled()
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Secret (if shown — otherwise leave blank)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        SecureField("Optional", text: $secret)
-                            .textFieldStyle(.roundedBorder)
-                    }
-
-                    Link("Find your API keys at app.alpaca.markets → API",
-                         destination: URL(string: "https://app.alpaca.markets/paper/dashboard/overview")!)
-                        .font(.caption)
-                        .padding(.top, 2)
-
-                } header: {
-                    Text("Alpaca API Credentials")
-                }
-
-                Section {
-                    Picker("Account Type", selection: $isPaper) {
-                        Text("Paper Trading").tag(true)
-                        Text("Live Trading").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                } header: {
-                    Text("Account Type")
-                }
-
-                Section {
-                    Toggle("Launch at Login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, newVal in
-                            setLaunchAtLogin(newVal)
+                            .foregroundColor(.accentColor)
                         }
-                } header: {
-                    Text("Startup")
+                        .padding(8)
+                    }
+
+                    // Account type
+                    GroupBox(label: Text("Account Type").font(.caption).foregroundColor(.secondary)) {
+                        Picker("", selection: $isPaper) {
+                            Text("Paper Trading").tag(true)
+                            Text("Live Trading").tag(false)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .padding(8)
+                    }
+
+                    // Launch at login
+                    GroupBox(label: Text("Startup").font(.caption).foregroundColor(.secondary)) {
+                        Toggle("Launch at Login", isOn: $launchAtLogin)
+                            .onChange(of: launchAtLogin) { _, newVal in setLaunchAtLogin(newVal) }
+                            .padding(8)
+                    }
                 }
+                .padding()
             }
-            .formStyle(.grouped)
 
             Divider()
 
-            // Auth status + Save button
+            // Footer
             HStack(spacing: 12) {
                 authStatusView
                 Spacer()
@@ -94,13 +92,12 @@ struct SettingsView: View {
             }
             .padding()
         }
-        .frame(width: 420, height: 480)
+        .frame(width: 420, height: 460)
         .onAppear {
             keyId         = account.apiKeyId
             secret        = account.apiSecret
             isPaper       = account.isPaper
             launchAtLogin = getLaunchAtLogin()
-            // If we already have a key, test it on open
             if !keyId.isEmpty {
                 checkAuth(keyId: keyId, secret: secret, paper: isPaper)
             }
@@ -127,16 +124,17 @@ struct SettingsView: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red)
                 Text(msg).font(.caption).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: 220)
         }
     }
 
     private func saveAndVerify() {
-        let trimmedKey    = keyId.trimmingCharacters(in: .whitespaces)
-        let trimmedSecret = secret.trimmingCharacters(in: .whitespaces)
-        account.apiKeyId  = trimmedKey
-        account.apiSecret = trimmedSecret.isEmpty ? trimmedKey : trimmedSecret
+        let k = keyId.trimmingCharacters(in: .whitespaces)
+        let s = secret.trimmingCharacters(in: .whitespaces)
+        account.apiKeyId  = k
+        account.apiSecret = s
         account.isPaper   = isPaper
-        checkAuth(keyId: trimmedKey, secret: trimmedSecret.isEmpty ? trimmedKey : trimmedSecret, paper: isPaper)
+        checkAuth(keyId: k, secret: s, paper: isPaper)
     }
 
     private func checkAuth(keyId: String, secret: String, paper: Bool) {
@@ -159,16 +157,14 @@ struct SettingsView: View {
                     authState = .success
                     account.isConfigured = true
                     account.refresh()
-                    // Auto-close after brief success display
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        dismiss()
+                        SettingsWindowController.shared?.close()
+                        SettingsWindowController.shared = nil
                     }
                 case 401, 403:
-                    authState = .failure("Invalid API key. Double-check your key at app.alpaca.markets → API.")
-                case 403:
-                    authState = .failure("Access forbidden. Make sure you're using the correct account type (paper vs live).")
+                    authState = .failure("Invalid credentials. Check your Key ID and Secret at app.alpaca.markets → API.")
                 default:
-                    authState = .failure("Unexpected error (HTTP \(status)). Try again.")
+                    authState = .failure("Error (HTTP \(status)). Try again.")
                 }
             }
         }.resume()

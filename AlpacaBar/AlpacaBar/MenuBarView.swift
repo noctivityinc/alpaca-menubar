@@ -17,11 +17,11 @@ struct MenuBarView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                SettingsLink {
-                    Text("Enter API Key")
-                        .frame(maxWidth: .infinity)
+                Button("Enter API Key") {
+                    SettingsWindowController.open(account: account)
                 }
                 .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.plain)
                     .font(.caption)
@@ -30,7 +30,7 @@ struct MenuBarView: View {
             .padding(20)
             .frame(width: 260)
         } else {
-        mainView
+            mainView
         }
     }
 
@@ -96,11 +96,11 @@ struct MenuBarView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
-                SettingsLink {
-                    Text("Settings")
-                        .font(.system(size: 12))
+                Button("Settings") {
+                    SettingsWindowController.open(account: account)
                 }
                 .buttonStyle(.plain)
+                .font(.system(size: 12))
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.plain)
@@ -111,7 +111,7 @@ struct MenuBarView: View {
             .padding(.vertical, 8)
         }
         .frame(width: 300)
-    } // end mainView
+    }
 
     @ViewBuilder
     private func statView(label: String, value: String) -> some View {
