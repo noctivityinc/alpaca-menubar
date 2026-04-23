@@ -168,11 +168,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func startRefreshTimer() {
         refreshTimer?.invalidate()
-        refreshTimer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+        // 10s during market hours, 60s outside
+        let interval: TimeInterval = account.marketStatus().isOpen ? 10 : 60
+        print("[AlpacaBar] refresh timer started (\(Int(interval))s interval, market open: \(account.marketStatus().isOpen))")
+        refreshTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             print("[AlpacaBar] auto-refresh fired")
-            self?.account.refresh()
+            self.account.refresh()
+            // Re-schedule if market status changed (e.g. market just opened/closed)
+            let newInterval: TimeInterval = self.account.marketStatus().isOpen ? 10 : 60
+            if newInterval != interval {
+                print("[AlpacaBar] market status changed, restarting timer at \(Int(newInterval))s")
+                self.startRefreshTimer()
+            }
         }
         RunLoop.main.add(refreshTimer!, forMode: .common)
-        print("[AlpacaBar] refresh timer started (30s interval)")
     }
 }

@@ -1,6 +1,31 @@
 import Foundation
 import AppKit
 
+enum MarketStatus: Equatable {
+    case open
+    case preMarket(minsUntilOpen: Int)
+    case closed(minsUntilOpen: Int)
+    case closedUntilWeekday(nextOpenMins: Int)
+
+    var isOpen: Bool { self == .open }
+
+    var displaySuffix: String {
+        switch self {
+        case .open:
+            return ""
+        case .preMarket(let mins):
+            let h = mins / 60, m = mins % 60
+            return h > 0 ? " — opens in \(h)h \(m)m" : " — opens in \(m)m"
+        case .closed(let mins):
+            let h = mins / 60, m = mins % 60
+            return h > 0 ? " — closed, opens in \(h)h \(m)m" : " — closed, opens in \(m)m"
+        case .closedUntilWeekday(let mins):
+            let h = mins / 60
+            return " — closed, opens in ~\(h)h"
+        }
+    }
+}
+
 struct AlpacaAccount: Decodable {
     let equity: String
     let last_equity: String
@@ -131,24 +156,66 @@ class AccountViewModel {
         self.dayChangePositive = change >= 0
         self.isConfigured = true
 
-        if isMarketHours() {
+        let status = marketStatus()
+        switch status {
+        case .open:
             let arrow = change >= 0 ? "▲" : "▼"
             menuLabel = "\(arrow) \(formatSignedPct(pct))  \(formatSignedDollars(change))"
-        } else {
-            menuLabel = "📈 \(formatSignedPct(pct))"
+        default:
+            menuLabel = "📈 \(formatSignedPct(pct))\(status.displaySuffix)"
         }
         onUpdate?()
     }
 
-    private func isMarketHours() -> Bool {
+    func marketStatus() -> MarketStatus {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "America/New_York")!
         let now = Date()
         let weekday = cal.component(.weekday, from: now)
-        if weekday == 1 || weekday == 7 { return false }
         let comps = cal.dateComponents([.hour, .minute], from: now)
         let mins = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
-        return mins >= 570 && mins <= 960
+
+        // Weekend
+        if weekday == 1 || weekday == 7 {
+            return .closedUntilWeekday(nextOpenMins: minsUntilNextOpen(cal: cal, now: now))
+        }
+        // Pre-market (before 9:30)
+        if mins < 570 {
+            return .preMarket(minsUntilOpen: 570 - mins)
+        }
+        // Market open (9:30–16:00)
+        if mins <= 960 {
+            return .open
+        }
+        // After hours
+        return .closed(minsUntilOpen: minsUntilNextOpen(cal: cal, now: now))
+    }
+
+    private func minsUntilNextOpen(cal: Calendar, now: Date) -> Int {
+        var comps = cal.dateComponents([.year, .month, .day, .weekday], from: now)
+        let weekday = comps.weekday ?? 2
+        // Days until next Monday-Friday
+        var daysAhead = 1
+        let dow = weekday % 7 // 0=Sun,1=Mon,...,6=Sat
+        // Find next weekday
+        var next = weekday
+        while true {
+            next = (next % 7) + 1 // 1-7 (Sun=1)
+            daysAhead += (next == weekday ? 7 : 0)
+            if next != 1 && next != 7 { break }
+            daysAhead += 1
+        }
+        // Simpler: just compute minutes to 9:30 AM ET tomorrow (or Monday)
+        var currentMins = (cal.component(.hour, from: now)) * 60 + cal.component(.minute, from: now)
+        // minutes remaining today after close + 9:30 next open day
+        // approximate: remaining mins today + overnight + 9:30
+        let minsInDay = 24 * 60
+        let minsLeft = minsInDay - currentMins
+        return minsLeft + 570 // rough: rest of today + until 9:30 AM next day
+    }
+
+    private func isMarketHours() -> Bool {
+        return marketStatus() == .open
     }
 
     private func formatDollars(_ v: Double) -> String {
