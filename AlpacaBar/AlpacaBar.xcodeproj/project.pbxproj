@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A006 /* Assets.xcassets */; };
 		B001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A001 /* main.swift */; };
 		B002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A002 /* AppDelegate.swift */; };
 		B003 /* AccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A003 /* AccountViewModel.swift */; };
@@ -20,6 +21,7 @@
 		A003 /* AccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViewModel.swift; sourceTree = "<group>"; };
 		A004 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		A005 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		A006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		PROD /* AlpacaBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlpacaBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -40,6 +42,7 @@
 				A003,
 				A004,
 				A005,
+				A006,
 			);
 			path = AlpacaBar;
 			sourceTree = "<group>";
@@ -135,6 +138,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B006,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
