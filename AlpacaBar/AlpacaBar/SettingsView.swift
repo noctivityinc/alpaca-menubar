@@ -1,7 +1,7 @@
 import SwiftUI
 import ServiceManagement
 
-enum AuthState {
+enum AuthState: Equatable {
     case idle
     case checking
     case success
