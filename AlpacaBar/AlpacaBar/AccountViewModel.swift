@@ -1,11 +1,5 @@
 import Foundation
-import Combine
 import AppKit
-import ServiceManagement
-
-extension Notification.Name {
-    static let openSettings = Notification.Name("openSettings")
-}
 
 struct AlpacaAccount: Decodable {
     let equity: String
@@ -14,30 +8,29 @@ struct AlpacaAccount: Decodable {
     let cash: String
 }
 
-struct AlpacaPosition: Decodable, Identifiable {
-    var id: String { symbol }
+struct AlpacaPosition: Decodable {
     let symbol: String
     let qty: String
     let unrealized_pl: String
     let unrealized_plpc: String
 }
 
-class AccountViewModel: ObservableObject {
-    @Published var menuLabel: String = "📈"
-    @Published var equity: String = "—"
-    @Published var buyingPower: String = "—"
-    @Published var cash: String = "—"
-    @Published var dayChange: String = "—"
-    @Published var dayChangePct: String = "—"
-    @Published var dayChangePositive: Bool = true
-    @Published var positions: [AlpacaPosition] = []
-    @Published var errorMessage: String? = nil
-    @Published var isConfigured: Bool = false
+class AccountViewModel {
+    var menuLabel: String = "📈"
+    var equity: String = "—"
+    var buyingPower: String = "—"
+    var cash: String = "—"
+    var dayChange: String = "—"
+    var dayChangePct: String = "—"
+    var dayChangePositive: Bool = true
+    var positions: [AlpacaPosition] = []
+    var errorMessage: String? = nil
+    var isConfigured: Bool = false
 
-    private var timer: Timer?
+    var onUpdate: (() -> Void)?
+
     private let keychainService = "AlpacaMenuBar"
 
-    // Keychain helpers
     var apiKeyId: String {
         get { KeychainHelper.load(service: keychainService, account: "key_id") ?? "" }
         set { KeychainHelper.save(service: keychainService, account: "key_id", value: newValue) }
@@ -56,22 +49,13 @@ class AccountViewModel: ObservableObject {
     }
 
     init() {
-        isConfigured = !apiKeyId.isEmpty && !apiSecret.isEmpty
-        refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            self?.refresh()
-        }
-        // Auto-open settings on first launch if no key configured
-        if !isConfigured {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                SettingsWindowController.open(account: self)
-            }
-        }
+        isConfigured = !apiKeyId.isEmpty
     }
 
     func refresh() {
-        guard !apiKeyId.isEmpty, !apiSecret.isEmpty else {
+        guard !apiKeyId.isEmpty else {
             menuLabel = "📈 ?"
+            onUpdate?()
             return
         }
         fetchAccount()
@@ -79,7 +63,7 @@ class AccountViewModel: ObservableObject {
     }
 
     private func headers() -> [String: String] {
-        ["APCA-API-KEY-ID": apiKeyId, "APCA-API-SECRET-KEY": apiSecret]
+        ["APCA-API-KEY-ID": apiKeyId, "APCA-API-SECRET-KEY": apiSecret.isEmpty ? apiKeyId : apiSecret]
     }
 
     private func fetchAccount() {
@@ -89,24 +73,28 @@ class AccountViewModel: ObservableObject {
 
         URLSession.shared.dataTask(with: req) { [weak self] data, response, error in
             DispatchQueue.main.async {
+                guard let self = self else { return }
                 if let error = error {
-                    self?.menuLabel = "📈 !"
-                    self?.errorMessage = error.localizedDescription
+                    self.menuLabel = "📈 !"
+                    self.errorMessage = error.localizedDescription
+                    self.onUpdate?()
                     return
                 }
                 if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                    self?.menuLabel = "📈 !"
-                    self?.errorMessage = "HTTP \(http.statusCode)"
+                    self.menuLabel = "📈 !"
+                    self.errorMessage = "HTTP \(http.statusCode)"
+                    self.onUpdate?()
                     return
                 }
                 guard let data = data,
                       let acct = try? JSONDecoder().decode(AlpacaAccount.self, from: data) else {
-                    self?.menuLabel = "📈 !"
-                    self?.errorMessage = "Parse error"
+                    self.menuLabel = "📈 !"
+                    self.errorMessage = "Parse error"
+                    self.onUpdate?()
                     return
                 }
-                self?.errorMessage = nil
-                self?.updateAccount(acct)
+                self.errorMessage = nil
+                self.updateAccount(acct)
             }
         }.resume()
     }
@@ -118,9 +106,11 @@ class AccountViewModel: ObservableObject {
 
         URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
             DispatchQueue.main.async {
-                guard let data = data,
+                guard let self = self,
+                      let data = data,
                       let positions = try? JSONDecoder().decode([AlpacaPosition].self, from: data) else { return }
-                self?.positions = positions
+                self.positions = positions
+                self.onUpdate?()
             }
         }.resume()
     }
@@ -139,6 +129,7 @@ class AccountViewModel: ObservableObject {
         self.dayChange    = formatSignedDollars(change)
         self.dayChangePct = formatSignedPct(pct)
         self.dayChangePositive = change >= 0
+        self.isConfigured = true
 
         if isMarketHours() {
             let arrow = change >= 0 ? "▲" : "▼"
@@ -146,6 +137,7 @@ class AccountViewModel: ObservableObject {
         } else {
             menuLabel = "📈 \(formatSignedPct(pct))"
         }
+        onUpdate?()
     }
 
     private func isMarketHours() -> Bool {
@@ -156,7 +148,7 @@ class AccountViewModel: ObservableObject {
         if weekday == 1 || weekday == 7 { return false }
         let comps = cal.dateComponents([.hour, .minute], from: now)
         let mins = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
-        return mins >= 570 && mins <= 960 // 9:30–16:00
+        return mins >= 570 && mins <= 960
     }
 
     private func formatDollars(_ v: Double) -> String {
