@@ -83,6 +83,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
             self.statusItem?.button?.title = self.account.menuLabel
 
+            // Tooltip shows last refresh time
+            let fmt = DateFormatter()
+            fmt.dateFormat = "h:mm:ss a"
+            fmt.timeZone = TimeZone(identifier: "America/New_York")
+            self.statusItem?.button?.toolTip = "Last updated: \(fmt.string(from: Date())) ET"
+
             menu.item(withTag: 1)?.title = "Equity: \(self.account.equity)"
             menu.item(withTag: 2)?.title = "Day: \(self.account.dayChangePct)  \(self.account.dayChange)"
             menu.item(withTag: 3)?.title = "Buying Power: \(self.account.buyingPower)"
