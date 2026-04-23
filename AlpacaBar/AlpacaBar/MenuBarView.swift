@@ -64,9 +64,11 @@ struct MenuBarView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                 Spacer()
-                Button("Settings") { NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
+                SettingsLink {
+                    Text("Settings")
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.plain)
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.plain)
