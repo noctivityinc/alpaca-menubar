@@ -12,10 +12,13 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Alpaca API Credentials") {
-                TextField("API Key ID", text: $keyId)
+                TextField("API Key (Key ID)", text: $keyId)
                     .textFieldStyle(.roundedBorder)
-                SecureField("API Secret Key", text: $secret)
+                SecureField("API Secret (leave blank if not shown)", text: $secret)
                     .textFieldStyle(.roundedBorder)
+                Text("Find your keys at app.alpaca.markets → API. If you only see one key value, enter it in both fields.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
 
             Section("Account Type") {
@@ -53,7 +56,7 @@ struct SettingsView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(keyId.isEmpty || secret.isEmpty)
+                .disabled(keyId.isEmpty)
             }
         }
         .formStyle(.grouped)
