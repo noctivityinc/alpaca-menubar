@@ -1,6 +1,6 @@
 import Cocoa
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
     private var refreshTimer: Timer?
@@ -94,12 +94,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Settings
 
     @objc func openSettings() {
+        print("[AlpacaBar] openSettings called")
+        print("[AlpacaBar] activation policy before: \(NSApp.activationPolicy().rawValue)")
+
         if settingsWindowController == nil {
+            print("[AlpacaBar] creating new SettingsWindowController")
             settingsWindowController = SettingsWindowController(account: account)
+            settingsWindowController?.window?.delegate = self
         }
+
+        print("[AlpacaBar] window before show: \(String(describing: settingsWindowController?.window))")
+        print("[AlpacaBar] window isVisible before: \(settingsWindowController?.window?.isVisible ?? false)")
+
         settingsWindowController?.showWindow(nil)
         settingsWindowController?.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        print("[AlpacaBar] window isVisible after: \(settingsWindowController?.window?.isVisible ?? false)")
+        print("[AlpacaBar] window isKey after: \(settingsWindowController?.window?.isKeyWindow ?? false)")
+        print("[AlpacaBar] activation policy after: \(NSApp.activationPolicy().rawValue)")
+    }
+
+    // MARK: - NSWindowDelegate
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        print("[AlpacaBar] windowDidBecomeKey")
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        print("[AlpacaBar] windowDidResignKey")
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        print("[AlpacaBar] windowWillClose — stack trace:")
+        Thread.callStackSymbols.prefix(20).forEach { print("[AlpacaBar]   \($0)") }
+    }
+
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        if let win = notification.object as? NSWindow {
+            print("[AlpacaBar] occlusionState changed: isVisible=\(win.isVisible) occludedVisible=\(win.occlusionState.contains(.visible))")
+        }
     }
 
     // MARK: - Refresh
