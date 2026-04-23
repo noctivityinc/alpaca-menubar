@@ -56,6 +56,13 @@ class AccountViewModel: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.refresh()
         }
+        // Auto-open settings on first launch if no key configured
+        if !isConfigured {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
     }
 
     func refresh() {
