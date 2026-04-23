@@ -1,41 +1,22 @@
 import Foundation
-import Security
 
+// During development (unsigned builds), Keychain prompts repeatedly.
+// We use UserDefaults here for simplicity. For a signed/distributed build,
+// swap this back to Security framework keychain calls.
 enum KeychainHelper {
+    private static func key(_ service: String, _ account: String) -> String {
+        "\(service).\(account)"
+    }
+
     static func save(service: String, account: String, value: String) {
-        let data = value.data(using: .utf8)!
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: account
-        ]
-        SecItemDelete(query as CFDictionary)
-        let attrs = query.merging([kSecValueData: data]) { $1 }
-        SecItemAdd(attrs as CFDictionary, nil)
+        UserDefaults.standard.set(value, forKey: key(service, account))
     }
 
     static func load(service: String, account: String) -> String? {
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: account,
-            kSecReturnData: true,
-            kSecMatchLimit: kSecMatchLimitOne
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let str = String(data: data, encoding: .utf8) else { return nil }
-        return str
+        UserDefaults.standard.string(forKey: key(service, account))
     }
 
     static func delete(service: String, account: String) {
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: account
-        ]
-        SecItemDelete(query as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: key(service, account))
     }
 }
