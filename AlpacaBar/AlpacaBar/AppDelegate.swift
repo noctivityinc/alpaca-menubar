@@ -8,6 +8,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let account = AccountViewModel()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setupMainMenu()
         setupStatusItem()
         startRefreshTimer()
         account.onUpdate = { [weak self] in
@@ -21,6 +22,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self.openSettings()
             }
         }
+    }
+
+    // MARK: - Main Menu (enables Cmd+V / paste in text fields)
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "Quit AlpacaBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+
+        let editMenuItem = NSMenuItem()
+        mainMenu.addItem(editMenuItem)
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenuItem.submenu = editMenu
+
+        NSApp.mainMenu = mainMenu
     }
 
     // MARK: - Status Item
@@ -143,9 +167,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func startRefreshTimer() {
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+        refreshTimer?.invalidate()
+        refreshTimer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+            print("[AlpacaBar] auto-refresh fired")
             self?.account.refresh()
         }
-        RunLoop.current.add(refreshTimer!, forMode: .common)
+        RunLoop.main.add(refreshTimer!, forMode: .common)
+        print("[AlpacaBar] refresh timer started (30s interval)")
     }
 }
