@@ -5,152 +5,45 @@ struct MenuBarView: View {
     @EnvironmentObject var account: AccountViewModel
 
     var body: some View {
-        if !account.isConfigured {
-            // Not yet set up — show prominent setup prompt
-            VStack(spacing: 12) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 32))
-                    .foregroundColor(.accentColor)
-                Text("AlpacaBar")
-                    .font(.headline)
-                Text("Connect your Alpaca account to get started.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                Button("Enter API Key") {
-                    let acct = account
-                    DispatchQueue.main.async {
-                        SettingsWindowController.open(account: acct)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
-                Button("Quit") { NSApplication.shared.terminate(nil) }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(20)
-            .frame(width: 260)
-        } else {
-            mainView
-        }
-    }
-
-    var mainView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header — equity + day change
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Equity: \(account.equity)")
-                    .font(.system(size: 13, weight: .semibold))
-                HStack(spacing: 4) {
-                    Image(systemName: account.dayChangePositive ? "arrow.up.right" : "arrow.down.right")
-                        .foregroundColor(account.dayChangePositive ? .green : .red)
-                        .font(.system(size: 11))
-                    Text("\(account.dayChangePct)  \(account.dayChange)")
-                        .foregroundColor(account.dayChangePositive ? .green : .red)
-                        .font(.system(size: 12, design: .monospaced))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
+        // Account summary (non-interactive labels)
+        if account.isConfigured {
+            Text("Equity: \(account.equity)")
+            Text("Day: \(account.dayChangePct)  \(account.dayChange)")
+                .foregroundColor(account.dayChangePositive ? .green : .red)
             Divider()
-
-            // Account stats
-            HStack(spacing: 16) {
-                statView(label: "Buying Power", value: account.buyingPower)
-                Divider().frame(height: 28)
-                statView(label: "Cash", value: account.cash)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            Text("Buying Power: \(account.buyingPower)")
+            Text("Cash: \(account.cash)")
 
             if !account.positions.isEmpty {
                 Divider()
-
-                Text("Positions")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .padding(.bottom, 2)
-
+                Text("Positions").foregroundColor(.secondary)
                 ForEach(account.positions.prefix(10)) { pos in
-                    positionRow(pos)
+                    let pnl = Double(pos.unrealized_pl) ?? 0
+                    let pct = (Double(pos.unrealized_plpc) ?? 0) * 100
+                    Text(String(format: "%@  %@sh  %@$%.2f (%@%.1f%%)",
+                                pos.symbol, pos.qty,
+                                pnl >= 0 ? "+" : "", pnl,
+                                pct >= 0 ? "+" : "", pct))
                 }
-                .padding(.bottom, 4)
             }
 
             if let err = account.errorMessage {
                 Divider()
-                Text("⚠ \(err)")
-                    .font(.system(size: 11))
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                Text("⚠ \(err)").foregroundColor(.red)
             }
 
             Divider()
-
-            // Footer buttons
-            HStack {
-                Button("Refresh") { account.refresh() }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
-                Spacer()
-                Button("Settings") {
-                    let acct = account
-                    DispatchQueue.main.async {
-                        SettingsWindowController.open(account: acct)
-                    }
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 12))
-                Spacer()
-                Button("Quit") { NSApplication.shared.terminate(nil) }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            Button("Refresh") { account.refresh() }
+        } else {
+            Text("AlpacaBar — not connected")
         }
-        .frame(width: 300)
-    }
 
-    @ViewBuilder
-    private func statView(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
+        Divider()
+        Button("Settings…") {
+            SettingsWindowController.open(account: account)
         }
-    }
-
-    @ViewBuilder
-    private func positionRow(_ pos: AlpacaPosition) -> some View {
-        let pnl = Double(pos.unrealized_pl) ?? 0
-        let pct = (Double(pos.unrealized_plpc) ?? 0) * 100
-        let positive = pnl >= 0
-
-        HStack {
-            Text(pos.symbol)
-                .font(.system(size: 12, weight: .semibold))
-                .frame(width: 50, alignment: .leading)
-            Text("\(pos.qty)sh")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(String(format: "%@$%.2f (%@%.1f%%)",
-                        pnl >= 0 ? "+" : "", pnl,
-                        pct >= 0 ? "+" : "", pct))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(positive ? .green : .red)
+        Button("Quit") {
+            NSApplication.shared.terminate(nil)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 2)
     }
 }

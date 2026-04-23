@@ -13,6 +13,6 @@ struct AlpacaBarApp: App {
             MenuBarLabel()
                 .environmentObject(account)
         }
-        .menuBarExtraStyle(.window)
+        .menuBarExtraStyle(.menu)
     }
 }
